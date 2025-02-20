@@ -50,71 +50,82 @@
     <h3>📋 신청 명단</h3>
     <ul id="playerList"></ul>
 
-    <script>
-        // ✅ Firebase 설정
-        const firebaseConfig = {
-            apiKey: "AIzaSyDaRiP6iXxygahfDrixzNq3ay9D7Q2qqpg",
-            authDomain: "unoform-check.firebaseapp.com",
-            databaseURL: "https://unoform-check-default-rtdb.firebaseio.com",
-            projectId: "unoform-check",
-            storageBucket: "unoform-check.firebasestorage.app",
-            messagingSenderId: "603659396235",
-            appId: "1:603659396235:web:4a9367487c22f04f15a08e",
-            measurementId: "G-T85XVC3HMG"
-        };
+  <script>
+    // ✅ Firebase 설정
+    const firebaseConfig = {
+        apiKey: "AIzaSyDaRiP6iXxygahfDrixzNq3ay9D7Q2qqpg",
+        authDomain: "unoform-check.firebaseapp.com",
+        databaseURL: "https://unoform-check-default-rtdb.firebaseio.com/",
+        projectId: "unoform-check",
+        storageBucket: "unoform-check.firebasestorage.app",
+        messagingSenderId: "603659396235",
+        appId: "1:603659396235:web:4a9367487c22f04f15a08e",
+        measurementId: "G-T85XVC3HMG"
+    };
 
-        // ✅ Firebase 초기화
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+    // ✅ Firebase 초기화
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-        const form = document.getElementById("playerForm");
-        const nameInput = document.getElementById("name");
-        const numberInput = document.getElementById("number");
-        const markingInput = document.getElementById("marking");
-        const playerList = document.getElementById("playerList");
-        const errorMessage = document.getElementById("errorMessage");
+    const form = document.getElementById("playerForm");
+    const nameInput = document.getElementById("name");
+    const numberInput = document.getElementById("number");
+    const markingInput = document.getElementById("marking");
+    const playerList = document.getElementById("playerList");
+    const errorMessage = document.getElementById("errorMessage");
 
-        function updatePlayerList() {
-            playerList.innerHTML = "";
-            database.ref("players").once("value", (snapshot) => {
-                snapshot.forEach((childSnapshot) => {
-                    const player = childSnapshot.val();
-                    const li = document.createElement("li");
-                    li.textContent = `#${player.number} - ${player.name} (${player.marking})`;
-                    playerList.appendChild(li);
-                });
-            });
-        }
-
-        form.addEventListener("submit", function (e) {
-            e.preventDefault();
-            const name = nameInput.value.trim();
-            const number = numberInput.value.trim();
-            const marking = markingInput.value.trim();
-
-            if (!name || !number || !marking) {
-                errorMessage.textContent = "모든 필드를 입력해주세요!";
-                return;
-            }
-
-            database.ref("players").orderByChild("number").equalTo(number).once("value", (snapshot) => {
-                if (snapshot.exists()) {
-                    errorMessage.textContent = "이미 사용 중인 등번호입니다!";
-                } else {
-                    errorMessage.textContent = "";
-                    const newPlayer = {
-                        name: name,
-                        number: number,
-                        marking: marking
-                    };
-                    database.ref("players").push(newPlayer);
-                    updatePlayerList();
-                    form.reset();
-                }
+    function updatePlayerList() {
+        playerList.innerHTML = "";
+        database.ref("players").once("value", (snapshot) => {
+            snapshot.forEach((childSnapshot) => {
+                const player = childSnapshot.val();
+                const li = document.createElement("li");
+                li.textContent = `#${player.number} - ${player.name} (${player.marking})`;
+                playerList.appendChild(li);
             });
         });
+    }
 
-        updatePlayerList();
-    </script>
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        console.log("폼 제출됨! ✅");  // 🔍 폼이 실행되는지 확인
+
+        const name = nameInput.value.trim();
+        const number = numberInput.value.trim();
+        const marking = markingInput.value.trim();
+
+        if (!name || !number || !marking) {
+            errorMessage.textContent = "모든 필드를 입력해주세요!";
+            return;
+        }
+
+        console.log("데이터 저장 시도:", { name, number, marking });  // 🔍 데이터 확인
+
+        database.ref("players").orderByChild("number").equalTo(number).once("value", (snapshot) => {
+            if (snapshot.exists()) {
+                console.log("중복된 등번호! ❌");  // 🔍 중복 확인
+                errorMessage.textContent = "이미 사용 중인 등번호입니다!";
+            } else {
+                errorMessage.textContent = "";
+                const newPlayer = {
+                    name: name,
+                    number: number,
+                    marking: marking
+                };
+
+                database.ref("players").push(newPlayer).then(() => {
+                    console.log("데이터 저장 완료! ✅");  // 🔍 Firebase 저장 확인
+                    updatePlayerList();
+                    form.reset();
+                }).catch(error => {
+                    console.error("Firebase 데이터 저장 오류:", error);  // 🔍 오류 확인
+                });
+            }
+        });
+    });
+
+    updatePlayerList();
+</script>
+
 </body>
 </html>
