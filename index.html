@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>풋살 유니폼 신청</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        form {
+            margin: 20px auto;
+            max-width: 300px;
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #playerList {
+            margin-top: 20px;
+            text-align: left;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>풋살 유니폼 신청</h2>
+    <form id="playerForm">
+        <input type="text" id="name" placeholder="이름 입력" required>
+        <input type="number" id="number" placeholder="등번호 입력" required>
+        <input type="text" id="marking" placeholder="마킹 이름 입력" required>
+        <button type="submit">저장</button>
+    </form>
+
+    <p id="errorMessage" class="error"></p>
+
+    <h3>📋 신청 명단</h3>
+    <ul id="playerList"></ul>
+
+    <script>
+        // ✅ Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaRiP6iXxygahfDrixzNq3ay9D7Q2qqpg",
+            authDomain: "unoform-check.firebaseapp.com",
+            databaseURL: "https://unoform-check-default-rtdb.firebaseio.com",
+            projectId: "unoform-check",
+            storageBucket: "unoform-check.firebasestorage.app",
+            messagingSenderId: "603659396235",
+            appId: "1:603659396235:web:4a9367487c22f04f15a08e",
+            measurementId: "G-T85XVC3HMG"
+        };
+
+        // ✅ Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const form = document.getElementById("playerForm");
+        const nameInput = document.getElementById("name");
+        const numberInput = document.getElementById("number");
+        const markingInput = document.getElementById("marking");
+        const playerList = document.getElementById("playerList");
+        const errorMessage = document.getElementById("errorMessage");
+
+        function updatePlayerList() {
+            playerList.innerHTML = "";
+            database.ref("players").once("value", (snapshot) => {
+                snapshot.forEach((childSnapshot) => {
+                    const player = childSnapshot.val();
+                    const li = document.createElement("li");
+                    li.textContent = `#${player.number} - ${player.name} (${player.marking})`;
+                    playerList.appendChild(li);
+                });
+            });
+        }
+
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            const number = numberInput.value.trim();
+            const marking = markingInput.value.trim();
+
+            if (!name || !number || !marking) {
+                errorMessage.textContent = "모든 필드를 입력해주세요!";
+                return;
+            }
+
+            database.ref("players").orderByChild("number").equalTo(number).once("value", (snapshot) => {
+                if (snapshot.exists()) {
+                    errorMessage.textContent = "이미 사용 중인 등번호입니다!";
+                } else {
+                    errorMessage.textContent = "";
+                    const newPlayer = {
+                        name: name,
+                        number: number,
+                        marking: marking
+                    };
+                    database.ref("players").push(newPlayer);
+                    updatePlayerList();
+                    form.reset();
+                }
+            });
+        });
+
+        updatePlayerList();
+    </script>
+</body>
+</html>
